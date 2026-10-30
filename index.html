@@ -6186,18 +6186,40 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeNewsPan
 
 
 <script id="tcol-section-routing">
-/* TCOL section URLs: all sections retain the same app, inventory and save state. */
+/* TCOL section URLs: support GitHub Pages project hosting under /the-cup-of-life/. */
 (function(){
+  const BASE='/the-cup-of-life';
   const routeMap={
     '/':'home','/main-menu':'home','/draft-packs':'draft','/my-club':'club',
     '/team':'team','/team-xi':'team','/market':'market','/store':'store',
     '/multiplayer':'multiplayer','/blitz':'blitz'
   };
   const pathFor={home:'/main-menu',draft:'/draft-packs',club:'/my-club',team:'/team-xi',market:'/market',store:'/store',multiplayer:'/multiplayer',blitz:'/blitz'};
+  function appPath(section){return BASE+(pathFor[section]||'/main-menu');}
+  function normalizedPath(path){
+    let p=path||'/';
+    if(p===BASE || p===BASE+'/') return '/';
+    if(p.startsWith(BASE+'/')) p=p.slice(BASE.length);
+    return p.replace(/\/$/,'')||'/';
+  }
+  function sectionFromLocation(){
+    // The 404.html fallback saves the original route before returning to the app root.
+    let saved='';
+    try{saved=sessionStorage.getItem('tcol-route')||'';sessionStorage.removeItem('tcol-route');}catch(e){}
+    if(saved){
+      const savedPath=saved.split(/[?#]/)[0];
+      const savedNormalized=normalizedPath(savedPath);
+      if(routeMap[savedNormalized]) return routeMap[savedNormalized];
+    }
+    const raw=normalizedPath(location.pathname);
+    return routeMap[raw]||'home';
+  }
   let routing=false;
   function setRoute(section, replace=false){
-    const path=pathFor[section]||'/main-menu';
-    if(location.pathname!==path){(replace?history.replaceState:history.pushState).call(history,{tcolSection:section},'',path);}
+    const path=appPath(section);
+    if(location.pathname!==path){
+      (replace?history.replaceState:history.pushState).call(history,{tcolSection:section},'',path);
+    }
   }
   function applyRoute(section){
     if(routing)return; routing=true;
@@ -6220,13 +6242,13 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeNewsPan
   }
   document.addEventListener('DOMContentLoaded',function(){
     wrap('goToHome','home');wrap('goToDraft','draft');wrap('goToSquad','club');wrap('goToStore','store');wrap('goToMarket','market');wrap('openTeamXI','team');wrap('openMpSetup','multiplayer');
-    const raw=location.pathname.replace(/\/$/,'')||'/';
-    const section=routeMap[raw]||'home';
-    if(raw!== (pathFor[section]||'/main-menu'))history.replaceState({tcolSection:section},'',pathFor[section]||'/main-menu');
+    const section=sectionFromLocation();
+    const expected=appPath(section);
+    if(location.pathname!==expected) history.replaceState({tcolSection:section},'',expected+location.search+location.hash);
     // Wait briefly for existing startup/login logic; route only when the app is available.
     setTimeout(()=>{const login=document.getElementById('login-screen'); if(!login||getComputedStyle(login).display==='none')applyRoute(section);},900);
   });
-  window.addEventListener('popstate',function(){const raw=location.pathname.replace(/\/$/,'')||'/';applyRoute(routeMap[raw]||'home');});
+  window.addEventListener('popstate',function(){applyRoute(sectionFromLocation());});
 })();
 </script>
 

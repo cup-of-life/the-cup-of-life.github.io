@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>The Cup of Life</title>
+  <script>
+    const path = window.location.pathname;
+    const query = window.location.search;
+    const hash = window.location.hash;
+
+    sessionStorage.setItem(
+      "tcol-route",
+      path + query + hash
+    );
+
+    window.location.replace("/");
+  </script>
+</head>
+<body>
+  Redirecting to The Cup of Life...
+</body>
+</html>
